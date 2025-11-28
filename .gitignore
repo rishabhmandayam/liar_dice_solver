@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Strategy files (optional - uncomment if you don't want to commit them)
+# strategy_*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

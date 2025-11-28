@@ -1,0 +1,40 @@
+name: Train CFR
+
+on:
+  workflow_dispatch:
+    inputs:
+      p1_dice:
+        description: 'P1 dice count'
+        required: true
+        default: '2'
+      p2_dice:
+        description: 'P2 dice count'
+        required: true
+        default: '2'
+      iterations:
+        description: 'Iterations'
+        required: true
+        default: '500000'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    
+    - name: Train
+      run: |
+        cd liars_dice_rust
+        cargo run --release ${{ github.event.inputs.p1_dice }} ${{ github.event.inputs.p2_dice }} ${{ github.event.inputs.iterations }}
+    
+    - name: Upload strategy
+      uses: actions/upload-artifact@v4
+      with:
+        name: strategy_${{ github.event.inputs.p1_dice }}v${{ github.event.inputs.p2_dice }}
+        path: strategy_*.csv

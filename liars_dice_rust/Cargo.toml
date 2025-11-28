@@ -1,0 +1,11 @@
+[package]
+name = "liars_dice_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8"
+rayon = "1.7"
+serde = { version = "1.0", features = ["derive"] }
+csv = "1.2"
+dashmap = "5.5"
