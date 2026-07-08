@@ -4,12 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-
-# Rust
-target/
-Cargo.lock
-**/*.rs.bk
-
 # Strategy files (optional - uncomment if you don't want to commit them)
 # strategy_*.csv
 
@@ -23,3 +17,7 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Virtual Environment
+.venv/
+

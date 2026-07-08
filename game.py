@@ -1,9 +1,29 @@
+
 import random
 from typing import List, Tuple, Optional
+import jax.numpy as jnp
 
 # Constants
 DICE_FACES = 6
 
+def action_to_id(action: Tuple[int, int], max_dice: int) -> int:
+        """
+        map (quantity, face) -> a singlular integer
+        """
+        if action == (-1, -1):
+            return 0
+        q,f = action
+        return (q - 1) * 6 + f
+
+def id_to_action(action_id: int) -> Tuple[int, int]:
+    """
+    map id -> (quantity, face)
+    """
+    if action_id == 0:
+        return (-1, -1)
+    q = ((action_id - 1) // 6) + 1
+    f = ((action_id - 1) % 6) + 1
+    return q, f
 class GameState:
     def __init__(self, dice_p1: int, dice_p2: int):
         self.dice_p1 = dice_p1
@@ -19,6 +39,7 @@ class GameState:
         self.hand_p1 = sorted([random.randint(1, DICE_FACES) for _ in range(self.dice_p1)])
         self.hand_p2 = sorted([random.randint(1, DICE_FACES) for _ in range(self.dice_p2)])
 
+
     def get_valid_actions(self) -> List[Tuple[int, int]]:
         """
         Returns a list of valid actions.
@@ -26,7 +47,6 @@ class GameState:
         Special action: (-1, -1) represents 'Challenge' (Liar)
         """
         actions = []
-        
         # If no bid has been made, any valid bid is allowed.
         if self.current_bid is None:
             total_dice = self.dice_p1 + self.dice_p2
@@ -49,8 +69,22 @@ class GameState:
         for q in range(curr_q + 1, total_dice + 1):
             for f in range(1, DICE_FACES + 1):
                 actions.append((q, f))
-        
         return actions
+
+    def get_action_mask(self) -> jnp.ndarray:
+        """
+        Returns a binary mask for valid actions.
+        Action format: (quantity, face)
+        Special action: (-1, -1) represents 'Challenge' (Liar)
+        """
+        total_dice = self.dice_p1 + self.dice_p2
+        max_actions = 1 + (total_dice * DICE_FACES)
+        mask = jnp.zeros((max_actions,), dtype=jnp.float32)
+
+        for act in self.get_valid_actions():
+            act_id = action_to_id(act, total_dice)
+            mask = mask.at[act_id].set(1.0)
+        return mask
 
     def apply_action(self, action: Tuple[int, int]):
         """
@@ -59,7 +93,7 @@ class GameState:
         """
         if action == (-1, -1):
             return True # Terminal state (Challenge)
-        
+
         self.current_bid = action
         self.history.append(action)
         self.current_player = 1 - self.current_player
@@ -69,39 +103,57 @@ class GameState:
         """
         Returns the payoff for the player who made the LAST move (the challenger).
         Note: The 'current_player' is the one who just challenged.
-        
+
         If Challenger wins, payoff is +1.
         If Challenger loses (Bidder wins), payoff is -1.
-        
-        The actual game rule: Loser loses a die. 
+
+        The actual game rule: Loser loses a die.
         For CFR, we usually model win/loss as +1/-1 per hand.
         The outer loop handles dice removal.
         """
         if self.current_bid is None:
-            return 0 # Should not happen
+            return 0.0 # Should not happen
 
         bid_q, bid_f = self.current_bid
-        
+
         # Count actual dice matching the bid
-        # Note: 1s are NOT wild as per requirements
         count = 0
         all_dice = self.hand_p1 + self.hand_p2
         for d in all_dice:
             if d == bid_f:
                 count += 1
-        
-        # Bidder wins if count >= bid_q
+
         bidder_wins = (count >= bid_q)
-        
-        # The player who called 'Challenge' is self.current_player
-        # The player who made the bid is 1 - self.current_player
-        
+
         if bidder_wins:
-            # Bidder was correct. Challenger (current_player) loses.
             return -1.0
         else:
-            # Bidder was lying. Challenger (current_player) wins.
             return 1.0
+
+    def get_information_tensor(self)->jnp.ndarray:
+        """
+        returns information set 
+        """
+        total_dice = self.dice_p1 + self.dice_p2
+        max_actions = 1 + (total_dice * DICE_FACES)
+
+        my_hand = self.hand_p1 if self.current_player == 0 else self.hand_p2
+        hand_counts = jnp.zeros(DICE_FACES, dtype=jnp.float32)
+        for die in my_hand:
+            hand_counts = hand_counts.at[die - 1].add(1.0)
+        
+        bid_tensor = jnp.zeros(max_actions, dtype=jnp.float32)
+        if self.current_bid is not None:
+            bid_id = action_to_id(self.current_bid, total_dice)
+            bid_tensor = bid_tensor.at[bid_id].set(1.0)
+        
+        meta_features = jnp.array([
+            float(self.dice_p1),
+            float(self.dice_p2),
+            float(len(self.history))
+        ], dtype=jnp.float32)
+        
+        return jnp.concatenate([hand_counts, bid_tensor, meta_features])
 
     def get_information_set(self) -> str:
         """
@@ -110,12 +162,12 @@ class GameState:
         """
         my_hand = self.hand_p1 if self.current_player == 0 else self.hand_p2
         hand_str = "".join(map(str, my_hand))
-        
+
         bid_str = "None"
         if self.current_bid:
             bid_str = f"{self.current_bid[0]}-{self.current_bid[1]}"
-            
+
         # Bid count is the number of bids made so far
         count_str = str(len(self.history))
-        
+
         return f"{hand_str}|{bid_str}|{count_str}"
