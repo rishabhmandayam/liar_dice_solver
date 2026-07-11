@@ -327,13 +327,13 @@ def main():
     train_parser.add_argument("--batch-size", type=int, default=64, help="Minibatch size for training updates")
     train_parser.add_argument("--train-every", type=int, default=1, help="Episodes between network updates")
     train_parser.add_argument("--sync-every", type=int, default=100, help="Episodes between target network updates")
-    train_parser.add_argument("--save-path", type=str, default="RL/artifacts/nfsp_policy.msgpack", help="Where to save SL policy parameters")
+    train_parser.add_argument("--save-path", type=str, default="artifacts/nfsp_policy.msgpack", help="Where to save SL policy parameters")
     
     # Play command
     play_parser = subparsers.add_parser("play", help="Play against a trained NFSP bot")
     play_parser.add_argument("--p1", type=int, default=1, help="P1 dice count")
     play_parser.add_argument("--p2", type=int, default=1, help="P2 dice count")
-    play_parser.add_argument("--model-path", type=str, default="RL/artifacts/nfsp_policy.msgpack", help="Path to loaded SL policy parameters")
+    play_parser.add_argument("--model-path", type=str, default="artifacts/nfsp_policy.msgpack", help="Path to loaded SL policy parameters")
     
     args = parser.parse_args()
     

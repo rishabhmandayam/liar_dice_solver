@@ -21,3 +21,5 @@ Thumbs.db
 # Virtual Environment
 .venv/
 
+# RL Artifacts
+RL/artifacts/
