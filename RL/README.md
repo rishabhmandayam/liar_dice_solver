@@ -39,12 +39,11 @@ The `Memory` class manages two separate replay buffers in memory using NumPy arr
   - `sl_states`: The information tensors.
   - `sl_actions`: Integer IDs of chosen actions.
 
-> [!WARNING]
-> **Known Typos/Bugs in [buffer.py](file:///Users/rishabhmandayam/Documents/GitHub/liar_dice_solver/RL/buffer.py)**:
-> 1. **Line 24**: `np.zeroes` is used instead of `np.zeros`.
-> 2. **Line 48 (`sample_rl`)**: `self.rl_size` is used, but the class attribute is named `self.size_rl`.
-> 3. **Line 58 (`sample_sl`)**: `self.sl_size` is used, but the class attribute is named `self.size_sl`.
-> 4. **Imports**: Unused imports (`from jax.lax import dtype`, `from jax._src import abstract_arrays`, and `from .. import game`) are present.
+> [!NOTE]
+> **Code Status**:
+> The `Memory` buffer implementation in [buffer.py](file:///Users/rishabhmandayam/Documents/GitHub/liar_dice_solver/RL/buffer.py) has been cleaned and corrected:
+> - Syntax and variable typos (`np.zeroes`, `self.rl_size`, and `self.sl_size`) have been fully resolved.
+> - Unused or broken imports have been removed.
 
 ### B. Training Steps ([train.py](file:///Users/rishabhmandayam/Documents/GitHub/liar_dice_solver/RL/train.py))
 The training script implements single training updates for both the RL and SL networks using **JAX** and **Optax**:
@@ -136,12 +135,58 @@ class DQN(nn.Module):
 
 ## 5. Integrating and Running NFSP
 
-To run training, you would implement an outer loop in a runner script (e.g. `RL/run_nfsp.py`) that:
-1. Initializes game parameters (`n_dice_p1`, `n_dice_p2`).
-2. Creates the `Memory` buffer with the calculated state dimension.
-3. Initializes parameters `rl_params`, `target_rl_params`, `sl_params`, and their corresponding Optax optimizers.
-4. Executes self-play matches:
-   - At each step, determines player's strategy.
-   - Collects actions and transitions.
-   - Pushes transitions to the `Memory` buffer.
-5. Periodically samples batches from the buffer and calls `train_rl_step` and `train_sl_step` to update model parameters.
+The complete NFSP pipeline is implemented in [run_nfsp.py](file:///Users/rishabhmandayam/Documents/GitHub/liar_dice_solver/RL/run_nfsp.py). This script supports training a new policy model and playing interactively against a trained bot.
+
+### Commands
+
+Run all commands from the repository root directory.
+
+#### A. Train the NFSP Agent
+To train a model on a specific dice configuration, use the `train` command:
+
+```bash
+python3 RL/run_nfsp.py train [options]
+```
+
+**Options**:
+* `--p1`: Number of dice for Player 1 (default: `1`).
+* `--p2`: Number of dice for Player 2 (default: `1`).
+* `--episodes`: Number of self-play games to simulate (default: `20000`).
+* `--lr`: Learning rate for networks (default: `1e-3`).
+* `--eta`: Anticipatory parameter (mix probability of RL best-response policy vs SL average policy) (default: `0.1`).
+* `--batch-size`: Mini-batch size for optimizer steps (default: `64`).
+* `--train-every`: Episodes simulated between model updates (default: `1`).
+* `--sync-every`: Episodes simulated between target DQN parameter synchronizations (default: `100`).
+* `--save-path`: Destination filepath to serialize SL average policy parameters (default: `RL/artifacts/nfsp_policy.msgpack`).
+
+*Example*:
+```bash
+python3 RL/run_nfsp.py train --p1 1 --p2 1 --episodes 20000 --save-path RL/artifacts/nfsp_policy.msgpack
+```
+
+#### B. Play Against the Trained Bot
+To play interactively against the trained model in the terminal, use the `play` command:
+
+```bash
+python3 RL/run_nfsp.py play [options]
+```
+
+**Options**:
+* `--p1`: Number of dice for Player 1 (default: `1`).
+* `--p2`: Number of dice for Player 2 (default: `1`).
+* `--model-path`: Filepath to read serialized policy parameters (default: `RL/artifacts/nfsp_policy.msgpack`).
+
+*Example*:
+```bash
+python3 RL/run_nfsp.py play --p1 1 --p2 1 --model-path RL/artifacts/nfsp_policy.msgpack
+```
+
+---
+
+## 6. Running Unit Tests
+
+To run the NFSP unit tests (which cover action masking, training updates, and Flax parameter serialization):
+
+```bash
+python3 -m unittest RL/tests/test_nfsp.py
+```

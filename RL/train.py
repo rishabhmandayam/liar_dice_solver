@@ -5,15 +5,16 @@ from .models import forward_rl, forward_sl
 
 @jax.jit(static_argnums=3)
 def train_rl_step(rl_params, target_rl_params, opt_state, tx, batch):
-    states, actions, rewards, next_states, dones = batch
+    states, actions, rewards, next_states, dones, next_masks = batch
 
     def loss_fn(params):
         q_values = jax.vmap(forward_rl, in_axes=(None, 0))(params, states)
-        chosen_q = jnp.take_along_axis(q_values, actions[:, None], axis=-1).squeeze()
-
+        chosen_q = jnp.take_along_axis(q_values, actions[:, None], axis=-1).squeeze(axis=-1)
 
         next_q = jax.vmap(forward_rl, in_axes=(None, 0))(target_rl_params, next_states)
-        max_next_q = jnp.max(next_q, axis=-1)
+        # Mask out invalid next actions
+        next_q_masked = next_q + (1.0 - next_masks) * -1e9
+        max_next_q = jnp.max(next_q_masked, axis=-1)
 
         target_q = rewards + 0.99 * max_next_q * (1.0 - dones)
 
