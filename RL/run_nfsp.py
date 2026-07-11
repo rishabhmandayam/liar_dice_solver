@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 import random
+import datetime
+import yaml
 import numpy as np
 import jax
 import jax.numpy as jnp
@@ -224,11 +226,36 @@ def train(p1_dice: int, p2_dice: int, episodes: int, lr: float, eta: float,
     print(f"Serializing SL policy parameters...")
     serialized_bytes = serialization.to_bytes(agent.sl_params)
     
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
-    with open(save_path, "wb") as f:
+    # Resolve the timestamped directory inside the base directory
+    base_dir = os.path.dirname(os.path.abspath(save_path))
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = os.path.join(base_dir, f"{p1_dice}v{p2_dice}_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
+    
+    # Save policy parameters
+    policy_file = os.path.join(run_dir, "nfsp_policy.msgpack")
+    with open(policy_file, "wb") as f:
         f.write(serialized_bytes)
-    print(f"Successfully saved SL policy parameters to: {save_path}")
+    print(f"Successfully saved SL policy parameters to: {policy_file}")
+
+    # Save hyperparameters as a YAML file
+    hyperparams = {
+        "p1_dice": p1_dice,
+        "p2_dice": p2_dice,
+        "episodes": episodes,
+        "lr": lr,
+        "eta": eta,
+        "batch_size": batch_size,
+        "train_every": train_every,
+        "sync_every": sync_every,
+        "state_dim": state_dim,
+        "action_dim": action_dim,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    yaml_file = os.path.join(run_dir, "model_export.yaml")
+    with open(yaml_file, "w") as f:
+        yaml.safe_dump(hyperparams, f, default_flow_style=False)
+    print(f"Successfully saved hyperparameters to: {yaml_file}")
 
 def play(p1_dice: int, p2_dice: int, model_path: str):
     if not os.path.exists(model_path):

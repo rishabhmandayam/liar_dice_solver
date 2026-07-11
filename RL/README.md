@@ -157,15 +157,19 @@ python3 RL/run_nfsp.py train [options]
 * `--batch-size`: Mini-batch size for optimizer steps (default: `64`).
 * `--train-every`: Episodes simulated between model updates (default: `1`).
 * `--sync-every`: Episodes simulated between target DQN parameter synchronizations (default: `100`).
-* `--save-path`: Destination filepath to serialize SL average policy parameters (default: `RL/artifacts/nfsp_policy.msgpack`).
+* `--save-path`: Parent base filepath to determine where the run directory is created (default: `artifacts/nfsp_policy.msgpack`). The runner dynamically creates a folder named `{p1}v{p2}_{timestamp}` in that directory (e.g. `artifacts/1v1_20260710_225209/`) and writes the policy files inside it.
 
 *Example*:
 ```bash
-python3 RL/run_nfsp.py train --p1 1 --p2 1 --episodes 20000 --save-path RL/artifacts/nfsp_policy.msgpack
+python3 RL/run_nfsp.py train --p1 1 --p2 1 --episodes 20000 --save-path artifacts/nfsp_policy.msgpack
 ```
 
+The run folder will contain:
+1. `nfsp_policy.msgpack`: The serialized policy parameters used to play games.
+2. `model_export.yaml`: A YAML file detailing the exact hyperparameters used during training.
+
 #### B. Play Against the Trained Bot
-To play interactively against the trained model in the terminal, use the `play` command:
+To play interactively against the trained model in the terminal, use the `play` command, pointing directly to the generated `.msgpack` parameter file:
 
 ```bash
 python3 RL/run_nfsp.py play [options]
@@ -174,11 +178,11 @@ python3 RL/run_nfsp.py play [options]
 **Options**:
 * `--p1`: Number of dice for Player 1 (default: `1`).
 * `--p2`: Number of dice for Player 2 (default: `1`).
-* `--model-path`: Filepath to read serialized policy parameters (default: `RL/artifacts/nfsp_policy.msgpack`).
+* `--model-path`: Filepath to the saved `.msgpack` policy parameter file (default: `artifacts/nfsp_policy.msgpack`).
 
 *Example*:
 ```bash
-python3 RL/run_nfsp.py play --p1 1 --p2 1 --model-path RL/artifacts/nfsp_policy.msgpack
+python3 RL/run_nfsp.py play --p1 1 --p2 1 --model-path artifacts/1v1_20260710_225209/nfsp_policy.msgpack
 ```
 
 ---
