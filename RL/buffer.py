@@ -1,9 +1,6 @@
-from jax.lax import dtype
-from jax._src import abstract_arrays
-from .. import game
-
 import numpy as np 
 import typing
+
 
 class Memory():
     def __init__(self, state_dim: int, capacity: int = 100_000):
@@ -21,7 +18,7 @@ class Memory():
         #SL Allocations
         self.ptr_sl = 0
         self.size_sl = 0
-        self.sl_states = np.zeroes((capacity, state_dim), dtype=np.float32)
+        self.sl_states = np.zeros((capacity, state_dim), dtype=np.float32)
         self.sl_actions = np.zeros(capacity, dtype=np.int32)
     
     def add_rl(self, state, action, reward, next_state, done):
@@ -45,7 +42,7 @@ class Memory():
 
     
     def sample_rl(self, batch_size: int):
-        idxs = np.random.choice(self.rl_size, batch_size, replace=False)
+        idxs = np.random.choice(self.size_rl, batch_size, replace=False)
         return (
             self.rl_states[idxs],
             self.rl_actions[idxs],
@@ -55,7 +52,7 @@ class Memory():
         )
     
     def sample_sl(self, batch_size: int):
-        idxs = np.random.choice(self.sl_size, batch_size, replace=False)
+        idxs = np.random.choice(self.size_sl, batch_size, replace=False)
 
         return (
             self.sl_states[idxs],
