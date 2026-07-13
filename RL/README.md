@@ -187,7 +187,27 @@ python3 RL/run_nfsp.py play --p1 1 --p2 1 --model-path artifacts/1v1_20260710_22
 
 ---
 
-## 6. Running Unit Tests
+## 6. Evaluating Bots (NFSP vs CFR)
+
+To run automated evaluation matches comparing the NFSP average policy against the CFR strategy (with seating positions balanced), use [eval_nfsp_vs_cfr.py](file:///Users/rishabhmandayam/Documents/GitHub/liar_dice_solver/RL/eval_nfsp_vs_cfr.py):
+
+```bash
+python3 RL/eval_nfsp_vs_cfr.py --model-path <path_to_msgpack> [options]
+```
+
+**Options**:
+* `--p1`: Number of dice for Player 1 (default: `1`).
+* `--p2`: Number of dice for Player 2 (default: `1`).
+* `--episodes`: Number of matches to run per position (default: `1000`).
+
+*Example*:
+```bash
+python3 RL/eval_nfsp_vs_cfr.py --model-path artifacts/1v1_20260710_231245/nfsp_policy.msgpack --p1 1 --p2 1 --episodes 1000
+```
+
+---
+
+## 7. Running Unit Tests
 
 To run the NFSP unit tests (which cover action masking, training updates, and Flax parameter serialization):
 
